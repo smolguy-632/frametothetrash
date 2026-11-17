@@ -34,4 +34,15 @@ public class FT3Config {
             "false = every loop iteration still renders a frame that is then thrown away (old behaviour)."
     })
     public static boolean skipUnseenFrames = true;
+
+    @Config.Name("disableFbo")
+    @Config.Comment({
+            "Render the world directly into the window's back buffer instead of an intermediate",
+            "framebuffer. This removes one full-screen copy of every frame that is shown, which",
+            "helps on weak iGPUs. Vanilla's own framebuffer-less path is used, so the game remains",
+            "fully supported; but a few mods assume the framebuffer exists (entity outline glow",
+            "effects will not render, screenshots may come out wrong), so this is off by default.",
+            "If the world looks black or garbled with your mod pack, turn this back off."
+    })
+    public static boolean disableFbo = false;
 }

@@ -6,6 +6,7 @@ import net.minecraft.client.renderer.EntityRenderer;
 import net.minecraft.client.shader.Framebuffer;
 import org.lwjgl.opengl.Display;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
@@ -28,10 +29,13 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 @Mixin(Minecraft.class)
 public abstract class MinecraftMixin {
 
+    @Shadow
+    public boolean skipRenderWorld;
+
     @Redirect(method = "updateDisplay",
             at = @At(value = "INVOKE", target = "Lorg/lwjgl/opengl/Display;update()V", remap = false))
     private void ft3$presentOnlyLatestFrame() {
-        if (FramePacer.shouldPresent()) {
+        if (FramePacer.shouldPresent(skipRenderWorld)) {
             Display.update();
         } else {
             Display.processMessages();
@@ -56,8 +60,10 @@ public abstract class MinecraftMixin {
     private static void ft3$blitOnlyVisibleFrame(Framebuffer framebuffer, int width, int height,
                                                  Operation<Void> original) {
         // Same decision as the render gate, made once per iteration: skipped iterations keep the
-        // window's back buffer as-is, since it will not be swapped anyway.
-        if (FramePacer.isRenderIteration()) {
+        // window's back buffer as-is, since it will not be swapped anyway. When vanilla skips the
+        // world render (loading screens), the render gate never ran this iteration, so always blit
+        // like vanilla does.
+        if (FramePacer.isRenderIteration() || Minecraft.getMinecraft().skipRenderWorld) {
             original.call(framebuffer, width, height);
         }
     }

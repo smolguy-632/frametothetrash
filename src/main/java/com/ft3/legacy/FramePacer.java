@@ -104,19 +104,28 @@ public final class FramePacer {
 
     /**
      * Present gate. Called once per loop iteration where {@code updateDisplay()} runs, i.e. on
-     * <em>every</em> iteration (rendered or not). In decoupled mode it simply presents the frames
-     * the render gate marked; in legacy mode it paces on its own as before.
+     * <em>every</em> iteration (rendered or not), and also from vanilla's own loading screen
+     * renderer. In decoupled mode it presents the frames the render gate marked; in legacy mode it
+     * paces on its own as before.
      *
+     * @param vanillaSkippedRender {@code true} when vanilla (or a mod) skipped the world render
+     *                             this iteration via {@code skipRenderWorld} (loading screens).
+     *                             The render gate never ran in that case, so the frame that was
+     *                             drawn (if any) is always shown and the schedule is left alone
+     *                             so pacing resumes normally once loading finishes.
      * @return {@code true} if the frame that just finished should be swapped to the screen,
      *         {@code false} if it should be discarded.
      */
-    public static boolean shouldPresent() {
+    public static boolean shouldPresent(boolean vanillaSkippedRender) {
         if (!FT3Config.enabled) {
             reset();
             renderIteration = false;
             return true;
         }
         if (decoupledMode) {
+            if (vanillaSkippedRender) {
+                return true;
+            }
             final boolean present = renderIteration;
             renderIteration = false;
             if (present) {

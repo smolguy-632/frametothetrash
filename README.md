@@ -32,6 +32,7 @@ excessive display updates.
 | `enabled` | `true` | `false` = vanilla behaviour |
 | `updatesPerSecond` | `60` | Frames per second actually put on screen (1–1000). Match your monitor's refresh rate. |
 | `skipUnseenFrames` | `true` | Display decoupling: frames that will not be shown are not rendered at all (see below). |
+| `disableFbo` | `false` | Renders the world straight into the window's back buffer — no intermediate framebuffer, no per-frame full-screen blit. Entity outline glow effects and screenshots may break; off by default. |
 
 ## "Skip unseen frames" (display decoupling)
 
@@ -54,7 +55,7 @@ You need a JDK to run Gradle (17 recommended). The Java 8 toolchain is downloade
 ./gradlew build
 ```
 
-The jar is `build/libs/frametothetrash-1.1.0.jar`. The first build takes a while because Gradle
+The jar is `build/libs/frametothetrash-1.1.1.jar`. The first build takes a while because Gradle
 downloads and decompiles Minecraft. `./gradlew runClient` starts a dev client.
 
 Build scripts are GregTechCEu's Buildscripts (MIT, see `LICENSE-buildscripts.txt`), which use
