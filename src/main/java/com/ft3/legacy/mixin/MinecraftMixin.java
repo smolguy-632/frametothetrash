@@ -3,7 +3,7 @@ package com.ft3.legacy.mixin;
 import com.ft3.legacy.FramePacer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.EntityRenderer;
-import net.minecraft.client.renderer.Framebuffer;
+import net.minecraft.client.shader.Framebuffer;
 import org.lwjgl.opengl.Display;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -52,7 +52,7 @@ public abstract class MinecraftMixin {
 
     @WrapOperation(method = "runGameLoop",
             at = @At(value = "INVOKE",
-                     target = "Lnet/minecraft/client/renderer/Framebuffer;framebufferRender(II)V"))
+                     target = "Lnet/minecraft/client/shader/Framebuffer;framebufferRender(II)V"))
     private static void ft3$blitOnlyVisibleFrame(Framebuffer framebuffer, int width, int height,
                                                  Operation<Void> original) {
         // Same decision as the render gate, made once per iteration: skipped iterations keep the
