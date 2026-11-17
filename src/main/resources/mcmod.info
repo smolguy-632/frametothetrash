@@ -1,0 +1,12 @@
+[{
+    "modid": "${modid}",
+    "name": "${modname}",
+    "description": "Bring frame rate to new heights by not sending excessive display updates. Only the newest finished frame is ever shown. Port of Frame to the Trash by NegativeOneHero to Minecraft 1.12.2 / Forge, made to work alongside Celeritas.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "logoFile": "assets/frametothetrash/icon.png",
+    "url": "",
+    "authorList": ["NegativeOneHero (original mod)"],
+    "credits": "Original Fabric mod by NegativeOneHero, CC0-1.0",
+    "dependencies": []
+}]

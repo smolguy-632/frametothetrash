@@ -1,0 +1,15 @@
+{
+  "package": "com.ft3.legacy.mixin",
+  "refmap": "mixins.frametothetrash.refmap.json",
+  "target": "@env(DEFAULT)",
+  "minVersion": "0.8",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [],
+  "client": [
+    "MinecraftMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
