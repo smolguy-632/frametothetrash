@@ -5,8 +5,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiIngame;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.shader.Framebuffer;
 
@@ -123,7 +123,7 @@ public final class HudCache {
         float texW = (float) width / hudFramebuffer.framebufferTextureWidth;
         float texH = (float) height / hudFramebuffer.framebufferTextureHeight;
         Tessellator tessellator = Tessellator.getInstance();
-        WorldRenderer buffer = tessellator.getWorldRenderer();
+        BufferBuilder buffer = tessellator.getBuffer();
         buffer.begin(7, DefaultVertexFormats.POSITION_TEX);
         buffer.pos(0.0D, height, 0.0D).tex(0.0D, 0.0D).endVertex();
         buffer.pos(width, height, 0.0D).tex(texW, 0.0D).endVertex();
