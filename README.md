@@ -33,6 +33,7 @@ excessive display updates.
 | `updatesPerSecond` | `60` | Frames per second actually put on screen (1–1000). Match your monitor's refresh rate. |
 | `skipUnseenFrames` | `true` | Display decoupling: frames that will not be shown are not rendered at all (see below). |
 | `guiRateDivisor` | `2` | Open GUI screens (menus, inventory, chat) render and show at `updatesPerSecond / divisor`; `1` = uncapped like before. Input stays fully responsive. |
+| `hudRateDivisor` | `2` | Exordium-style HUD caching: the in-game HUD is re-rendered at `updatesPerSecond / divisor` into its own framebuffer and stamped over every rendered frame in between; `1` = vanilla. |
 | `disableFbo` | `false` | Renders the world straight into the window's back buffer — no intermediate framebuffer, no per-frame full-screen blit. Entity outline glow effects and screenshots may break; off by default. |
 
 ## "Skip unseen frames" (display decoupling)
@@ -49,6 +50,15 @@ In-game F3 FPS counts loop iterations and goes into the millions; the monitor st
 * With the option off, every loop iteration still renders a frame that is then thrown away (the
   original mod's behaviour — same on-screen result, much more CPU/GPU work).
 
+## HUD caching (`hudRateDivisor`)
+
+Like [Exordium](https://modrinth.com/mod/exordium), the in-game HUD (hotbar, crosshair, chat,
+potion icons, boss bars) is re-rendered into its own framebuffer only
+`updatesPerSecond / hudRateDivisor` times per second (30 with the defaults) and that cached image
+is stamped over every rendered frame in between — the HUD does not need to be drawn at the full
+frame rate, and the F3 debug overlay is drawn outside of it and stays at full rate.
+Ignored when `disableFbo` is on or the divisor is 1.
+
 ## Building
 
 You need a JDK to run Gradle (17 recommended). The Java 8 toolchain is downloaded automatically.
@@ -57,7 +67,7 @@ You need a JDK to run Gradle (17 recommended). The Java 8 toolchain is downloade
 ./gradlew build
 ```
 
-The jar is `build/libs/frametothetrash-1.2.0.jar`. The first build takes a while because Gradle
+The jar is `build/libs/frametothetrash-1.3.0.jar`. The first build takes a while because Gradle
 downloads and decompiles Minecraft. `./gradlew runClient` starts a dev client.
 
 Build scripts are GregTechCEu's Buildscripts (MIT, see `LICENSE-buildscripts.txt`), which use

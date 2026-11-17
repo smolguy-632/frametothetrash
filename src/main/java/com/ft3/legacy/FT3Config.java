@@ -47,6 +47,18 @@ public class FT3Config {
     @Config.RangeInt(min = 1, max = 20)
     public static int guiRateDivisor = 2;
 
+    @Config.Name("hudRateDivisor")
+    @Config.Comment({
+            "Exordium-style HUD caching: the in-game HUD (hotbar, crosshair, chat, potion icons,",
+            "boss bars) is re-rendered into its own framebuffer at updatesPerSecond / hudRateDivisor",
+            "and that cached image is stamped over every rendered frame in between, so the HUD does",
+            "not have to be drawn at full frame rate.",
+            "1 = HUD rendered every frame like vanilla. 2 = half the rate (30 when that is 60).",
+            "Only used while skipUnseenFrames is on; needs FBOs (ignored when disableFbo is on)."
+    })
+    @Config.RangeInt(min = 1, max = 20)
+    public static int hudRateDivisor = 2;
+
     @Config.Name("disableFbo")
     @Config.Comment({
             "Render the world directly into the window's back buffer instead of an intermediate",
