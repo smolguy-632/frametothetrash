@@ -23,4 +23,15 @@ public class FT3Config {
     })
     @Config.RangeInt(min = 1, max = 1000)
     public static int updatesPerSecond = 60;
+
+    @Config.Name("skipUnseenFrames")
+    @Config.Comment({
+            "Display decoupling: frames that will not be shown are not rendered at all.",
+            "The game loop keeps ticking and polling input at full speed, but the world is drawn",
+            "only when a frame is about to be put on the screen, and that frame is shown immediately",
+            "after it finishes, so what you see is always the most recent possible image.",
+            "In-game F3 FPS counts loop iterations and will go into the millions; that is normal.",
+            "false = every loop iteration still renders a frame that is then thrown away (old behaviour)."
+    })
+    public static boolean skipUnseenFrames = true;
 }

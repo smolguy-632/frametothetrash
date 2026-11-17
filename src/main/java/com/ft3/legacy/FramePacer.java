@@ -1,7 +1,8 @@
 package com.ft3.legacy;
 
 /**
- * Decides, once per rendered frame, whether that frame is put on the screen or thrown away.
+ * Decides, once per rendered frame, whether that frame is put on the screen or thrown away, and
+ * in decoupled mode also which game-loop iterations render at all.
  * <p>
  * Everything here runs on the render thread, so there is no queue, no scheduler thread and no
  * locking. That is what keeps the "latest frame only" guarantee simple:
@@ -12,14 +13,20 @@ package com.ft3.legacy;
  * <li>Frames that are not presented are simply overwritten in the back buffer by the next one.</li>
  * <li>If the game stalls and several presentation slots are missed, they are dropped rather than
  * replayed as a burst. The schedule resynchronises to "now".</li>
- * <li>Of the frames around a presentation deadline, the one that finishes <em>closest</em> to the
- * deadline is the one chosen, so the image on screen is as fresh as possible when it appears.</li>
+ * <li>Of the frames around each deadline, the one that finishes <em>closest</em> to the deadline is
+ * the one chosen, so the image on screen is as fresh as possible when it appears.</li>
  * </ul>
+ * <p>
+ * In decoupled mode ({@code skipUnseenFrames}) the loop still ticks and polls input every
+ * iteration, but the world is only drawn on an iteration whose frame will actually be presented.
+ * The frame drawn that way is the newest thing the game can show: it is built from the input and
+ * the tick state of the iteration that ends right at the presentation deadline, and it goes on the
+ * screen the moment it is finished.
  */
 public final class FramePacer {
 
     private static final long NANOS_PER_SECOND = 1_000_000_000L;
-    /** Weight of the newest sample in the moving average of frame time. */
+    /** Weight of the newest sample in the moving average of frame time (legacy pacing only). */
     private static final double SMOOTHING = 0.1D;
 
     /** Deadline (System.nanoTime) of the next presentation slot, 0 = not started. */
@@ -29,10 +36,76 @@ public final class FramePacer {
     /** Moving average of the time between two finished frames, in nanoseconds. */
     private static double averageFrameNanos;
 
+    /** True when the current loop iteration is rendering a frame that will be presented. */
+    private static boolean renderIteration;
+    /** Cached decoupled flag, so toggling the config resets the schedule cleanly. */
+    private static boolean decoupledMode;
+
     private FramePacer() {}
 
     /**
-     * Call once at the end of every rendered frame.
+     * Render gate. Called once per game-loop iteration, right before the world-render block.
+     *
+     * @return {@code true} if this iteration must render a frame, {@code false} if the world render
+     *         (and the framebuffer blit) can be skipped entirely because no frame will be presented.
+     */
+    public static boolean shouldRenderFrame(boolean screenOpen) {
+        if (!FT3Config.enabled) {
+            renderIteration = false;
+            return true;
+        }
+        final boolean decoupled = FT3Config.skipUnseenFrames;
+        if (decoupled != decoupledMode) {
+            decoupledMode = decoupled;
+            reset();
+        }
+        if (!decoupled) {
+            // Legacy behaviour: every iteration renders; pacing happens at the present gate only.
+            renderIteration = false;
+            return true;
+        }
+        if (screenOpen) {
+            // Menus and any open GUI screen: render and show every iteration so the UI stays
+            // fully responsive and never freezes visually while clicks still work.
+            renderIteration = true;
+            return true;
+        }
+        return shouldRenderFrameDecoupled(System.nanoTime(), FT3Config.updatesPerSecond);
+    }
+
+    /** Time-injected variant of the decoupled render decision, kept package-private for testing. */
+    static boolean shouldRenderFrameDecoupled(long now, int updatesPerSecond) {
+        if (updatesPerSecond < 1) {
+            updatesPerSecond = 1;
+        }
+        final long interval = NANOS_PER_SECOND / updatesPerSecond;
+
+        if (nextPresentNanos == 0L) {
+            // very first frame: render and show it immediately
+            nextPresentNanos = now + interval;
+            renderIteration = true;
+            return true;
+        }
+
+        // Render the first iteration that can still land near the deadline. Anything earlier is
+        // skipped: it would only be overwritten by a newer frame before it is ever shown.
+        if (now + interval / 2L >= nextPresentNanos) {
+            renderIteration = true;
+            return true;
+        }
+        renderIteration = false;
+        return false;
+    }
+
+    /** Whether the current loop iteration is rendering a frame that will be presented. */
+    public static boolean isRenderIteration() {
+        return renderIteration;
+    }
+
+    /**
+     * Present gate. Called once per loop iteration where {@code updateDisplay()} runs, i.e. on
+     * <em>every</em> iteration (rendered or not). In decoupled mode it simply presents the frames
+     * the render gate marked; in legacy mode it paces on its own as before.
      *
      * @return {@code true} if the frame that just finished should be swapped to the screen,
      *         {@code false} if it should be discarded.
@@ -40,13 +113,28 @@ public final class FramePacer {
     public static boolean shouldPresent() {
         if (!FT3Config.enabled) {
             reset();
+            renderIteration = false;
             return true;
         }
-        return shouldPresent(System.nanoTime(), FT3Config.updatesPerSecond);
+        if (decoupledMode) {
+            final boolean present = renderIteration;
+            renderIteration = false;
+            if (present) {
+                final long now = System.nanoTime();
+                lastFrameEndNanos = now;
+                int updatesPerSecond = FT3Config.updatesPerSecond;
+                if (updatesPerSecond < 1) {
+                    updatesPerSecond = 1;
+                }
+                nextPresentNanos = now + NANOS_PER_SECOND / updatesPerSecond;
+            }
+            return present;
+        }
+        return shouldPresentLegacy(System.nanoTime(), FT3Config.updatesPerSecond);
     }
 
-    /** Time-injected variant of {@link #shouldPresent()}, kept package-private so it can be tested. */
-    static boolean shouldPresent(long now, int updatesPerSecond) {
+    /** Time-injected variant of the legacy present decision, kept package-private for testing. */
+    static boolean shouldPresentLegacy(long now, int updatesPerSecond) {
         if (updatesPerSecond < 1) {
             updatesPerSecond = 1;
         }

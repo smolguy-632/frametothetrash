@@ -473,6 +473,8 @@ repositories {
             name 'GTCEu Maven'
             url 'https://maven.gtceu.com'
         }
+        // MixinExtras compile-only API (io.github.llamalad7)
+        mavenCentral()
     }
     if (usesMixins.toBoolean() || forceEnableMixins.toBoolean()) {
         // need to add this here even if we did not above

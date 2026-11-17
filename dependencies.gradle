@@ -38,5 +38,7 @@
  * For more details, see https://docs.gradle.org/8.4/userguide/java_library_plugin.html#sec:java_library_configurations_graph
  */
 dependencies {
-
+    // MixinExtras ships at runtime via MixinBooter (Cleanroom bundles 0.5.6+); compile against the
+    // published API so the WrapOperation annotations resolve at build time.
+    compileOnly("io.github.llamalad7:mixinextras-forge:0.5.5")
 }
