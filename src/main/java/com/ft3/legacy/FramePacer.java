@@ -38,6 +38,8 @@ public final class FramePacer {
 
     /** True when the current loop iteration is rendering a frame that will be presented. */
     private static boolean renderIteration;
+    /** Presentation interval (ns) the current iteration's render decision was made with. */
+    private static long pendingIntervalNanos;
     /** Cached decoupled flag, so toggling the config resets the schedule cleanly. */
     private static boolean decoupledMode;
 
@@ -65,20 +67,29 @@ public final class FramePacer {
             return true;
         }
         if (screenOpen) {
-            // Menus and any open GUI screen: render and show every iteration so the UI stays
-            // fully responsive and never freezes visually while clicks still work.
-            renderIteration = true;
-            return true;
+            // Open GUI screens: with divisor 1 (or in any odd config state) render and show every
+            // iteration like before, so the UI stays maximally responsive. Otherwise pace screens
+            // at updatesPerSecond / divisor, which saves a lot of GPU while menus are open; clicks
+            // and typing stay responsive because input is polled every iteration regardless.
+            int divisor = FT3Config.guiRateDivisor;
+            if (divisor <= 1) {
+                renderIteration = true;
+                pendingIntervalNanos = intervalNanos(FT3Config.updatesPerSecond);
+                return true;
+            }
+            return shouldRenderFrameDecoupled(System.nanoTime(), FT3Config.updatesPerSecond / divisor);
         }
         return shouldRenderFrameDecoupled(System.nanoTime(), FT3Config.updatesPerSecond);
     }
 
+    private static long intervalNanos(int updatesPerSecond) {
+        return NANOS_PER_SECOND / Math.max(1, updatesPerSecond);
+    }
+
     /** Time-injected variant of the decoupled render decision, kept package-private for testing. */
     static boolean shouldRenderFrameDecoupled(long now, int updatesPerSecond) {
-        if (updatesPerSecond < 1) {
-            updatesPerSecond = 1;
-        }
-        final long interval = NANOS_PER_SECOND / updatesPerSecond;
+        final long interval = intervalNanos(updatesPerSecond);
+        pendingIntervalNanos = interval;
 
         if (nextPresentNanos == 0L) {
             // very first frame: render and show it immediately
@@ -131,11 +142,13 @@ public final class FramePacer {
             if (present) {
                 final long now = System.nanoTime();
                 lastFrameEndNanos = now;
-                int updatesPerSecond = FT3Config.updatesPerSecond;
-                if (updatesPerSecond < 1) {
-                    updatesPerSecond = 1;
+                // Advance by the interval the render decision used, so paced GUI screens stay on
+                // their own (slower) schedule while open and the world resyncs when they close.
+                long interval = pendingIntervalNanos;
+                if (interval <= 0L) {
+                    interval = intervalNanos(FT3Config.updatesPerSecond);
                 }
-                nextPresentNanos = now + NANOS_PER_SECOND / updatesPerSecond;
+                nextPresentNanos = now + interval;
             }
             return present;
         }
@@ -183,5 +196,6 @@ public final class FramePacer {
         nextPresentNanos = 0L;
         lastFrameEndNanos = 0L;
         averageFrameNanos = 0.0D;
+        pendingIntervalNanos = 0L;
     }
 }

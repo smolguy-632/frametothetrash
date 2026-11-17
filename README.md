@@ -32,6 +32,7 @@ excessive display updates.
 | `enabled` | `true` | `false` = vanilla behaviour |
 | `updatesPerSecond` | `60` | Frames per second actually put on screen (1–1000). Match your monitor's refresh rate. |
 | `skipUnseenFrames` | `true` | Display decoupling: frames that will not be shown are not rendered at all (see below). |
+| `guiRateDivisor` | `2` | Open GUI screens (menus, inventory, chat) render and show at `updatesPerSecond / divisor`; `1` = uncapped like before. Input stays fully responsive. |
 | `disableFbo` | `false` | Renders the world straight into the window's back buffer — no intermediate framebuffer, no per-frame full-screen blit. Entity outline glow effects and screenshots may break; off by default. |
 
 ## "Skip unseen frames" (display decoupling)
@@ -42,8 +43,9 @@ input and tick state, is shown immediately after it finishes, and nothing older 
 In-game F3 FPS counts loop iterations and goes into the millions; the monitor still gets
 `updatesPerSecond` frames, which is all it can show anyway.
 
-* Open GUI screens (menus, the config screen) always render every iteration so they never freeze
-  visually while clicks still work.
+* Open GUI screens (menus, the config screen) update at `updatesPerSecond / guiRateDivisor` by
+  default (half the rate), so menus cost much less GPU; clicks and typing always stay responsive.
+  Set `guiRateDivisor` to 1 for the old uncapped behaviour.
 * With the option off, every loop iteration still renders a frame that is then thrown away (the
   original mod's behaviour — same on-screen result, much more CPU/GPU work).
 
@@ -55,7 +57,7 @@ You need a JDK to run Gradle (17 recommended). The Java 8 toolchain is downloade
 ./gradlew build
 ```
 
-The jar is `build/libs/frametothetrash-1.1.1.jar`. The first build takes a while because Gradle
+The jar is `build/libs/frametothetrash-1.2.0.jar`. The first build takes a while because Gradle
 downloads and decompiles Minecraft. `./gradlew runClient` starts a dev client.
 
 Build scripts are GregTechCEu's Buildscripts (MIT, see `LICENSE-buildscripts.txt`), which use

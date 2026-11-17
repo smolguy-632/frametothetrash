@@ -35,6 +35,18 @@ public class FT3Config {
     })
     public static boolean skipUnseenFrames = true;
 
+    @Config.Name("guiRateDivisor")
+    @Config.Comment({
+            "How much slower open GUI screens (menus, inventory, chat, config) are rendered and",
+            "shown compared to updatesPerSecond. Only used while skipUnseenFrames is on.",
+            "1 = screens render every loop iteration like before (uncapped).",
+            "2 = screens update at half the updatesPerSecond rate (e.g. 30 when that is 60).",
+            "3 = a third of the rate, and so on. Clicks and typing always stay responsive; only",
+            "the picture updates slower, which saves a lot of GPU while you are in menus."
+    })
+    @Config.RangeInt(min = 1, max = 20)
+    public static int guiRateDivisor = 2;
+
     @Config.Name("disableFbo")
     @Config.Comment({
             "Render the world directly into the window's back buffer instead of an intermediate",
